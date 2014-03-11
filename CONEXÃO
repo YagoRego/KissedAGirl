@@ -1,0 +1,88 @@
+import br.ifrn.java.modelo.Cliente;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ *
+ * @author Pedro Baesse
+ */
+public class Conexao{
+
+    private Connection connect;
+    private Statement statement;
+    private PreparedStatement pSAdicionarCliente;
+    private PreparedStatement pSSelecionarCliente;
+    private PreparedStatement pSAtualizar;
+    private ResultSet resultSet;
+    
+    public Conexao(){
+        try {
+            
+            Class.forName("com.mysql.jdbc.Driver");
+            
+            connect = DriverManager.getConnection("jdbc:mysql://localhost/revisao","root","root");
+            
+            statement = connect.createStatement();
+            
+        }catch(ClassNotFoundException ex) {
+           System.out.println("Classe não encontrada!");
+        }catch (SQLException ex){
+           System.out.println("Problema com SQL");
+        }        
+    }
+    
+    ////Adiciona um cliente
+    public int adicionarCliente(Cliente c) throws SQLException{
+       pSAdicionarCliente = connect.prepareStatement("insert into cliente values(?,?,?,?)");
+       
+       pSAdicionarCliente.setInt(1, c.getId());
+       pSAdicionarCliente.setString(2, c.getNome());
+       pSAdicionarCliente.setString(3, c.getEndereço());
+       pSAdicionarCliente.setInt(4, c.getTelefone());
+               
+       return pSAdicionarCliente.executeUpdate();
+    }
+    //Seleciona um cliente
+    public Cliente selecionarCliente(int id) throws SQLException{
+        
+        pSSelecionarCliente = connect.prepareStatement("select * from cliente where ccodigo=?");
+        
+        pSSelecionarCliente.setInt(1, id);
+        resultSet = pSSelecionarCliente.executeQuery();
+        
+        
+        if(resultSet.next()){
+            Cliente c = new Cliente();
+            c.setId(resultSet.getInt(1));
+            c.setNome(resultSet.getString("nome"));
+            c.setEndereço(resultSet.getString(3));
+            c.setTelefone(resultSet.getInt("fone")); 
+            
+            return c;
+        }else{
+            return null;
+        }  
+    }
+    
+    //Apagar cliente
+    public int apagarCliente(int id) throws SQLException{
+         return statement.executeUpdate("delete from cliente where ccodigo = " + String.valueOf(id)+";"); 
+    }
+    
+    //Atualiza cliente
+    public int atualizarCliente(Cliente cli) throws SQLException{
+        pSAtualizar = connect.prepareStatement("update cliente set nome=?, endereco=?, fone=? where ccodigo = ? ");
+        pSAtualizar.setInt(4, cli.getId());
+        pSAtualizar.setString(1, cli.getNome());
+        pSAtualizar.setString(2, cli.getEndereço());
+        pSAtualizar.setInt(3, cli.getTelefone());
+        return pSAtualizar.executeUpdate();
+        
+    }
+}
